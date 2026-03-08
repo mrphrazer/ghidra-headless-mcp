@@ -236,297 +236,297 @@ The server currently exposes `212` tools across `34` feature groups. The broader
 
 ### Core and Infrastructure
 
-## analysis
-- `analysis.analyzers.list`: analysis analyzers list.
-- `analysis.analyzers.set`: analysis analyzers set.
-- `analysis.clear_cache`: analysis clear cache.
-- `analysis.options.get`: Get the value of an analysis option.
-- `analysis.options.list`: List available analysis options.
-- `analysis.options.set`: Set an analysis option value.
-- `analysis.status`: Get the current analysis status.
-- `analysis.update`: Start auto-analysis (non-blocking).
-- `analysis.update_and_wait`: Run auto-analysis and wait for completion.
+#### analysis
+- `analysis.analyzers.list`: List boolean analyzers available for the current program and show whether each one is enabled.
+- `analysis.analyzers.set`: Enable or disable a specific boolean analyzer for the current program.
+- `analysis.clear_cache`: Clear cached decompiler state for the current session so later requests rebuild it cleanly.
+- `analysis.options.get`: Return the current value of a specific analysis option.
+- `analysis.options.list`: List available analysis options together with their current values.
+- `analysis.options.set`: Update the value of an analysis option for the current session.
+- `analysis.status`: Return the current auto-analysis status for the session.
+- `analysis.update`: Start auto-analysis in the background and return immediately.
+- `analysis.update_and_wait`: Run auto-analysis and wait until it completes.
 
-## health
-- `health.ping`: Health check.
+#### health
+- `health.ping`: Confirm that the server is reachable and responding.
 
-## mcp
-- `mcp.response_format`: Explain MCP tool result fields (`structuredContent` full payload, `content[0].text` summary).
+#### mcp
+- `mcp.response_format`: Explain how MCP tool responses split full structured data and human-readable summary text.
 
-## task
-- `task.analysis_update`: task analysis update.
-- `task.cancel`: Cancel a running or queued task.
-- `task.result`: Get the result of a completed task.
-- `task.status`: Get the status of an asynchronous task.
+#### task
+- `task.analysis_update`: Start auto-analysis as a tracked background task and return a task ID.
+- `task.cancel`: Request cancellation for a running or queued asynchronous task.
+- `task.result`: Return the terminal result or error payload for a completed task.
+- `task.status`: Return status, timing, and cancellation details for an asynchronous task.
 
 ### Project, Program, and Transactions
 
-## program
-- `program.close`: Close an open program session and release resources.
-- `program.export_binary`: Export program as a binary file.
-- `program.image_base.set`: Set the program image base address.
-- `program.list_open`: List all currently open program sessions.
-- `program.mode.get`: Get the current read/write mode of a session.
-- `program.mode.set`: Set a session to read-only or read-write mode.
-- `program.open`: Open a binary file for analysis and return a session ID.
-- `program.open_bytes`: Open a binary from base64-encoded bytes and return a session ID.
-- `program.report`: program report.
-- `program.save`: Save the current program state to the project.
-- `program.save_as`: Save the program under a new name or location.
-- `program.summary`: Return a summary of the program in a session (architecture, memory, entry point).
+#### program
+- `program.close`: Close an open program session and release its associated resources.
+- `program.export_binary`: Export the program to disk as either the original-file format or raw bytes.
+- `program.image_base.set`: Change the program image base and optionally commit the rebasing operation.
+- `program.list_open`: List all program sessions currently held open by the server.
+- `program.mode.get`: Return whether a session is currently read-only or read-write.
+- `program.mode.set`: Switch a session between read-only and read-write mode.
+- `program.open`: Open a binary file for analysis and return a new session.
+- `program.open_bytes`: Open a binary from base64-encoded bytes and return a new session.
+- `program.report`: Return a compact program report with counts plus sample functions, strings, imports, and memory blocks.
+- `program.save`: Save the current program state back into the project.
+- `program.save_as`: Save the current program under a new project path or name.
+- `program.summary`: Return core program metadata such as architecture, memory layout, and entry point.
 
-## project
-- `project.export`: project export.
-- `project.file.info`: project file info.
-- `project.files.list`: project files list.
-- `project.folders.list`: project folders list.
-- `project.program.open`: project program open.
-- `project.program.open_existing`: project program open existing.
-- `project.search.programs`: project search programs.
+#### project
+- `project.export`: Export the current Ghidra project artifacts to a destination directory.
+- `project.file.info`: Return metadata and state flags for a specific project file.
+- `project.files.list`: List project files with folder, content-type, query, and pagination filters.
+- `project.folders.list`: List project folders, optionally walking the tree recursively.
+- `project.program.open`: Open a program already stored in the current project and return a new session.
+- `project.program.open_existing`: Open a program from a named existing Ghidra project and return a new session.
+- `project.search.programs`: Search program files in the project by name or path.
 
-## transaction
-- `transaction.begin`: Begin an explicit undo transaction.
-- `transaction.commit`: Commit the active transaction.
-- `transaction.redo`: Redo the last undone change.
-- `transaction.revert`: Revert (roll back) the active transaction.
-- `transaction.status`: Get the current transaction status.
-- `transaction.undo`: Undo the last committed change.
+#### transaction
+- `transaction.begin`: Begin an explicit undo transaction for grouped changes.
+- `transaction.commit`: Commit the active transaction so its changes become undoable.
+- `transaction.redo`: Reapply the most recently undone change.
+- `transaction.revert`: Roll back the active transaction without committing it.
+- `transaction.status`: Return undo, redo, and active-transaction status for the session.
+- `transaction.undo`: Undo the most recently committed change.
 
 ### Listing, Memory, Disassembly, and Patching
 
-## context
-- `context.get`: context get.
-- `context.ranges`: context ranges.
-- `context.set`: context set.
+#### context
+- `context.get`: Return processor context register values at a specific address.
+- `context.ranges`: List address ranges where a processor context register value applies.
+- `context.set`: Set processor context register values across an address range.
 
-## listing
-- `listing.clear`: listing clear.
-- `listing.code_unit.after`: listing code unit after.
-- `listing.code_unit.at`: listing code unit at.
-- `listing.code_unit.before`: listing code unit before.
-- `listing.code_unit.containing`: listing code unit containing.
-- `listing.code_units.list`: listing code units list.
-- `listing.data.at`: listing data at.
-- `listing.data.clear`: listing data clear.
-- `listing.data.create`: listing data create.
-- `listing.data.list`: listing data list.
-- `listing.disassemble.function`: Disassemble an entire function.
-- `listing.disassemble.range`: Disassemble a range of addresses.
-- `listing.disassemble.seed`: Disassemble starting from a seed address.
+#### listing
+- `listing.clear`: Clear listing content over a range, including optional symbols, comments, references, functions, or context.
+- `listing.code_unit.after`: Return the nearest code unit that follows a given address.
+- `listing.code_unit.at`: Return the code unit that starts exactly at a given address.
+- `listing.code_unit.before`: Return the nearest code unit that precedes a given address.
+- `listing.code_unit.containing`: Return the code unit that contains a given address.
+- `listing.code_units.list`: List code units in a range with pagination and direction controls.
+- `listing.data.at`: Return the defined data item at a specific address.
+- `listing.data.clear`: Clear one or more data definitions starting at an address.
+- `listing.data.create`: Create a data definition of a chosen type at an address.
+- `listing.data.list`: List defined data items in the program with range and pagination controls.
+- `listing.disassemble.function`: Disassemble all instructions that belong to a function body.
+- `listing.disassemble.range`: Disassemble instructions across a selected address range.
+- `listing.disassemble.seed`: Start disassembly from a seed address and follow discovered flows.
 
-## memory
-- `memory.block.create`: memory block create.
-- `memory.block.remove`: memory block remove.
-- `memory.blocks.list`: List all memory blocks in the program.
-- `memory.read`: Read raw bytes from program memory.
-- `memory.write`: Write raw bytes to program memory.
+#### memory
+- `memory.block.create`: Create a memory block with permissions, initialization, and an optional comment.
+- `memory.block.remove`: Remove an existing memory block from the program.
+- `memory.blocks.list`: List memory blocks together with addresses, permissions, and sizes.
+- `memory.read`: Read raw bytes directly from program memory.
+- `memory.write`: Write raw bytes directly into program memory.
 
-## patch
-- `patch.assemble`: patch assemble.
-- `patch.branch_invert`: patch branch invert.
-- `patch.nop`: patch nop.
+#### patch
+- `patch.assemble`: Assemble instruction text at an address and write the resulting bytes.
+- `patch.branch_invert`: Invert a conditional branch instruction in place.
+- `patch.nop`: Replace instructions in a range with NOP bytes.
 
 ### Symbols, Namespaces, Externals, and References
 
-## class
-- `class.create`: class create.
+#### class
+- `class.create`: Create a class namespace for recovered methods or fields.
 
-## equate
-- `equate.clear_range`: equate clear range.
-- `equate.create`: equate create.
-- `equate.delete`: equate delete.
-- `equate.list`: equate list.
+#### equate
+- `equate.clear_range`: Remove equate references across an address range and delete empty equates.
+- `equate.create`: Create an equate and attach it to an operand at an address.
+- `equate.delete`: Delete an equate entirely, or remove one of its references before deletion.
+- `equate.list`: List equates together with values and attached references.
 
-## external
-- `external.entrypoint.add`: external entrypoint add.
-- `external.entrypoint.list`: external entrypoint list.
-- `external.entrypoint.remove`: external entrypoint remove.
-- `external.exports.list`: List exported symbols.
-- `external.function.create`: external function create.
-- `external.imports.list`: List imported symbols.
-- `external.library.create`: external library create.
-- `external.library.list`: external library list.
-- `external.library.set_path`: external library set path.
-- `external.location.create`: external location create.
-- `external.location.get`: external location get.
+#### external
+- `external.entrypoint.add`: Add an address to the program's external entry point set.
+- `external.entrypoint.list`: List addresses currently marked as external entry points.
+- `external.entrypoint.remove`: Remove an address from the external entry point set.
+- `external.exports.list`: List symbols exported by the program.
+- `external.function.create`: Create an external function symbol under an external location.
+- `external.imports.list`: List symbols imported by the program.
+- `external.library.create`: Create a new external library record.
+- `external.library.list`: List external libraries known to the program.
+- `external.library.set_path`: Set or update the filesystem path associated with an external library.
+- `external.location.create`: Create an external location for a symbol within a library.
+- `external.location.get`: Return details for a specific external location.
 
-## namespace
-- `namespace.create`: namespace create.
+#### namespace
+- `namespace.create`: Create a namespace under an optional parent namespace.
 
-## reference
-- `reference.association.remove`: reference association remove.
-- `reference.association.set`: reference association set.
-- `reference.clear_from`: reference clear from.
-- `reference.clear_to`: reference clear to.
-- `reference.create.external`: reference create external.
-- `reference.create.memory`: reference create memory.
-- `reference.create.register`: reference create register.
-- `reference.create.stack`: reference create stack.
-- `reference.delete`: reference delete.
-- `reference.from`: List cross-references from an address.
-- `reference.primary.set`: reference primary set.
-- `reference.to`: List cross-references to an address.
+#### reference
+- `reference.association.remove`: Remove the symbol association attached to a specific reference.
+- `reference.association.set`: Associate a specific reference with a symbol.
+- `reference.clear_from`: Remove references originating from one address or an address range.
+- `reference.clear_to`: Remove all references that target a specific address.
+- `reference.create.external`: Create a reference from an address to an external location.
+- `reference.create.memory`: Create a memory reference between two program addresses.
+- `reference.create.register`: Create a reference from an address to a register.
+- `reference.create.stack`: Create a reference from an address to a stack location.
+- `reference.delete`: Delete a specific reference selected by source, destination, and operand.
+- `reference.from`: List cross-references that originate from an address.
+- `reference.primary.set`: Mark a specific reference as the primary one for its operand.
+- `reference.to`: List cross-references that target an address.
 
-## symbol
-- `symbol.by_name`: Look up a symbol by its name.
-- `symbol.create`: Create a new symbol (label) at an address.
-- `symbol.delete`: Delete a symbol at an address.
-- `symbol.list`: List symbols with optional filtering and pagination.
-- `symbol.namespace.move`: symbol namespace move.
-- `symbol.primary.set`: symbol primary set.
+#### symbol
+- `symbol.by_name`: Look up a symbol by name and return its details.
+- `symbol.create`: Create a new symbol or label at an address.
+- `symbol.delete`: Delete a symbol at an address, optionally by name.
+- `symbol.list`: List symbols with filtering and pagination support.
+- `symbol.namespace.move`: Move a symbol into a different namespace.
+- `symbol.primary.set`: Mark a selected symbol as the primary symbol at its address.
 - `symbol.rename`: Rename an existing symbol.
 
 ### Comments, Bookmarks, Tags, Metadata, Source, and Relocations
 
-## bookmark
-- `bookmark.add`: bookmark add.
-- `bookmark.clear`: bookmark clear.
-- `bookmark.list`: bookmark list.
-- `bookmark.remove`: bookmark remove.
+#### bookmark
+- `bookmark.add`: Add a bookmark at an address with a type, category, and comment.
+- `bookmark.clear`: Remove bookmarks in an address range, optionally filtered by bookmark type.
+- `bookmark.list`: List bookmarks, optionally scoped to an address or bookmark type.
+- `bookmark.remove`: Remove bookmarks at an address, optionally filtered by type or category.
 
-## comment
-- `comment.get`: Get the comment at a specific address.
-- `comment.get_all`: Get all comment types at an address.
-- `comment.list`: List comments matching optional filters.
-- `comment.set`: Set or clear a comment at an address.
+#### comment
+- `comment.get`: Return one comment type from a specific address.
+- `comment.get_all`: Return all available comment types at an address, with optional function comments.
+- `comment.list`: List comments matching range, type, text, and pagination filters.
+- `comment.set`: Set or clear a comment of a selected type at an address.
 
-## metadata
-- `metadata.query`: metadata query.
-- `metadata.store`: metadata store.
+#### metadata
+- `metadata.query`: Read metadata entries stored by this server, optionally filtered by key or prefix.
+- `metadata.store`: Store a JSON-serializable metadata value under a program-scoped key.
 
-## relocation
-- `relocation.add`: relocation add.
-- `relocation.list`: relocation list.
+#### relocation
+- `relocation.add`: Add a relocation entry at an address with type, status, values, and symbol metadata.
+- `relocation.list`: List relocation entries, optionally limited to an address range.
 
-## source
-- `source.file.add`: source file add.
-- `source.file.list`: source file list.
-- `source.file.remove`: source file remove.
-- `source.map.add`: source map add.
-- `source.map.list`: source map list.
-- `source.map.remove`: source map remove.
+#### source
+- `source.file.add`: Register a source file record with the program's source file manager.
+- `source.file.list`: List all source files currently registered with the program.
+- `source.file.remove`: Remove a source file record by path.
+- `source.map.add`: Add a source mapping entry from a source line to an address range.
+- `source.map.list`: List source mapping entries by address, source file, or line filters.
+- `source.map.remove`: Remove a specific source mapping entry by file, line, and base address.
 
-## tag
-- `tag.add`: tag add.
-- `tag.list`: tag list.
-- `tag.remove`: tag remove.
-- `tag.stats`: tag stats.
+#### tag
+- `tag.add`: Create or reuse a function tag and attach it to a function.
+- `tag.list`: List tags for one function or across the whole program.
+- `tag.remove`: Remove a function tag from a function.
+- `tag.stats`: Summarize function tags and the number of functions using each one.
 
 ### Functions, Variables, Types, and Layout Reconstruction
 
-## function
-- `function.at`: Get function information at a specific address.
-- `function.batch.run`: function batch run.
-- `function.body.set`: function body set.
-- `function.by_name`: Look up a function by its name.
-- `function.callees`: List functions called by a given function.
-- `function.callers`: List functions that call a given function.
-- `function.calling_convention.set`: function calling convention set.
-- `function.calling_conventions.list`: function calling conventions list.
+#### function
+- `function.at`: Return the function that starts at, or contains, a specific address.
+- `function.batch.run`: Run one supported action across a filtered batch of functions.
+- `function.body.set`: Replace the body range of an existing function.
+- `function.by_name`: Look up a function by name and return its details.
+- `function.callees`: List the functions called by a specific function.
+- `function.callers`: List the functions that call a specific function.
+- `function.calling_convention.set`: Set the calling convention used by a function.
+- `function.calling_conventions.list`: List calling conventions available in the current program.
 - `function.create`: Create a new function at a given address.
 - `function.delete`: Delete a function at a given address.
-- `function.flags.set`: function flags set.
-- `function.list`: List functions in the program with optional filtering and pagination.
-- `function.rename`: Rename a function.
-- `function.report`: function report.
-- `function.return_type.set`: function return type set.
-- `function.signature.get`: Get the full signature of a function.
-- `function.signature.set`: Set the signature of a function from a C declaration.
-- `function.thunk.set`: function thunk set.
-- `function.variables`: List local variables and parameters of a function.
+- `function.flags.set`: Update function flags such as varargs, inline, noreturn, or custom storage.
+- `function.list`: List functions in the program with filtering and pagination support.
+- `function.rename`: Rename an existing function.
+- `function.report`: Return a richer function report with signature, variables, call graph edges, xrefs, and decompilation output.
+- `function.return_type.set`: Set the return type of a function.
+- `function.signature.get`: Return the full signature of a function.
+- `function.signature.set`: Apply a full C-style signature declaration to a function.
+- `function.thunk.set`: Mark a function as a thunk to another function.
+- `function.variables`: List parameters and local variables for a function.
 
-## layout
-- `layout.enum.create`: layout enum create.
-- `layout.enum.member.add`: layout enum member add.
-- `layout.enum.member.remove`: layout enum member remove.
-- `layout.inspect.components`: layout inspect components.
-- `layout.struct.bitfield.add`: layout struct bitfield add.
-- `layout.struct.create`: layout struct create.
-- `layout.struct.field.add`: layout struct field add.
-- `layout.struct.field.clear`: layout struct field clear.
-- `layout.struct.field.comment.set`: layout struct field comment set.
-- `layout.struct.field.rename`: layout struct field rename.
-- `layout.struct.field.replace`: layout struct field replace.
-- `layout.struct.fill_from_decompiler`: layout struct fill from decompiler.
-- `layout.struct.get`: layout struct get.
-- `layout.struct.resize`: layout struct resize.
-- `layout.union.create`: layout union create.
-- `layout.union.member.add`: layout union member add.
-- `layout.union.member.remove`: layout union member remove.
+#### layout
+- `layout.enum.create`: Create an enum data type in a chosen category.
+- `layout.enum.member.add`: Add a named value to an enum data type.
+- `layout.enum.member.remove`: Remove a named member from an enum data type.
+- `layout.inspect.components`: Inspect the component layout of a composite data type.
+- `layout.struct.bitfield.add`: Insert a bitfield into a structure at a byte and bit offset.
+- `layout.struct.create`: Create a structure data type in a chosen category.
+- `layout.struct.field.add`: Add a field to a structure at a specific offset or append position.
+- `layout.struct.field.clear`: Clear a field from a structure by offset, ordinal, or field name.
+- `layout.struct.field.comment.set`: Set or clear the comment on a structure field.
+- `layout.struct.field.rename`: Rename a structure field.
+- `layout.struct.field.replace`: Replace an existing structure field with a new type, size, name, or comment.
+- `layout.struct.fill_from_decompiler`: Build or extend a structure from decompiler-observed usage of a variable.
+- `layout.struct.get`: Return a structure definition together with its components.
+- `layout.struct.resize`: Resize a structure to a specific total length.
+- `layout.union.create`: Create a union data type in a chosen category.
+- `layout.union.member.add`: Add a member to a union data type.
+- `layout.union.member.remove`: Remove a member from a union data type.
 
-## parameter
-- `parameter.add`: parameter add.
-- `parameter.move`: parameter move.
-- `parameter.remove`: parameter remove.
-- `parameter.replace`: parameter replace.
+#### parameter
+- `parameter.add`: Add a new parameter to a function with a chosen type and storage.
+- `parameter.move`: Reorder a parameter to a new ordinal within the signature.
+- `parameter.remove`: Remove a parameter from a function by ordinal or name.
+- `parameter.replace`: Replace an existing parameter definition by ordinal or name.
 
-## stackframe
-- `stackframe.variable.clear`: stackframe variable clear.
-- `stackframe.variable.create`: stackframe variable create.
-- `stackframe.variables`: stackframe variables.
+#### stackframe
+- `stackframe.variable.clear`: Clear a stack-frame variable at a specific stack offset.
+- `stackframe.variable.create`: Create a stack-frame variable at a specific stack offset.
+- `stackframe.variables`: List stack-frame variables for a function.
 
-## type
-- `type.apply_at`: Apply a data type at an address.
-- `type.archives.list`: type archives list.
-- `type.category.create`: type category create.
-- `type.category.list`: type category list.
+#### type
+- `type.apply_at`: Apply a data type at an address in the listing.
+- `type.archives.list`: List the current program archive plus attached source archives.
+- `type.category.create`: Create a new data type category path.
+- `type.category.list`: List data type categories under a path, optionally recursively.
 - `type.define_c`: Define a new data type from a C declaration.
-- `type.delete`: Delete a data type by name or path.
-- `type.get`: Get details of a data type by name or path.
-- `type.get_by_id`: type get by id.
-- `type.list`: List data types with optional filtering and pagination.
-- `type.parse_c`: Parse a C type declaration without committing it (unless composite).
+- `type.delete`: Delete a data type by name or full path.
+- `type.get`: Return details for a data type by name or full path.
+- `type.get_by_id`: Look up a data type by internal ID, universal ID, or source archive ID.
+- `type.list`: List data types with filtering and pagination support.
+- `type.parse_c`: Parse a C declaration and return the resulting type without necessarily committing it.
 - `type.rename`: Rename an existing data type.
-- `type.source_archives.list`: type source archives list.
+- `type.source_archives.list`: List source archives referenced by the current data type manager.
 
-## variable
-- `variable.comment.set`: variable comment set.
-- `variable.local.create`: variable local create.
-- `variable.local.remove`: variable local remove.
-- `variable.rename`: variable rename.
-- `variable.retype`: variable retype.
+#### variable
+- `variable.comment.set`: Set or clear the comment attached to a local variable or parameter.
+- `variable.local.create`: Create a local variable with explicit type, storage, and optional comment.
+- `variable.local.remove`: Remove a local variable from a function.
+- `variable.rename`: Rename a local variable or parameter.
+- `variable.retype`: Change the data type of a local variable or parameter.
 
 ### Decompiler, P-Code, Search, and Graph Extraction
 
-## decomp
-- `decomp.ast`: decomp ast.
-- `decomp.function`: Decompile a function and return C source code.
-- `decomp.global.rename`: decomp global rename.
-- `decomp.global.retype`: decomp global retype.
-- `decomp.high_function.summary`: decomp high function summary.
-- `decomp.override.get`: decomp override get.
-- `decomp.override.set`: decomp override set.
-- `decomp.tokens`: decomp tokens.
-- `decomp.trace_type.backward`: decomp trace type backward.
-- `decomp.trace_type.forward`: decomp trace type forward.
-- `decomp.writeback.locals`: decomp writeback locals.
-- `decomp.writeback.params`: decomp writeback params.
+#### decomp
+- `decomp.ast`: Decompile a function and return the Clang markup tree for the result.
+- `decomp.function`: Decompile a function and return recovered C source code.
+- `decomp.global.rename`: Rename a global symbol selected through decompiler high-symbol information.
+- `decomp.global.retype`: Retype a global symbol selected through decompiler high-symbol information.
+- `decomp.high_function.summary`: Summarize the high-function view, including local symbols, globals, blocks, and jump tables.
+- `decomp.override.get`: Return the decompiler call override, if any, for a specific callsite.
+- `decomp.override.set`: Set or replace the decompiler call override signature for a specific callsite.
+- `decomp.tokens`: Decompile a function and return tokenized Clang markup for the output.
+- `decomp.trace_type.backward`: Trace type propagation backward from a selected decompiler symbol.
+- `decomp.trace_type.forward`: Trace type propagation forward from a selected decompiler symbol.
+- `decomp.writeback.locals`: Commit decompiler-recovered local names back into the program database.
+- `decomp.writeback.params`: Commit decompiler-recovered parameter information back into the program database.
 
-## ghidra
-- `ghidra.call`: Generic API bridge for direct Ghidra and Java access.
-- `ghidra.eval`: Evaluate Python code inside the Ghidra runtime context.
-- `ghidra.info`: Return Ghidra and PyGhidra runtime information.
+#### ghidra
+- `ghidra.call`: Invoke Ghidra or Java APIs directly through a generic bridge.
+- `ghidra.eval`: Evaluate Python code inside the live Ghidra runtime context.
+- `ghidra.info`: Return runtime information about Ghidra, PyGhidra, and the server environment.
 - `ghidra.script`: Run a Ghidra script against an open program session.
 
-## graph
-- `graph.basic_blocks`: graph basic blocks.
-- `graph.call_paths`: graph call paths.
-- `graph.cfg.edges`: graph cfg edges.
+#### graph
+- `graph.basic_blocks`: List the basic blocks that make up a function.
+- `graph.call_paths`: Find call graph paths between two functions up to a chosen depth.
+- `graph.cfg.edges`: List control-flow edges between the basic blocks of a function.
 
-## pcode
-- `pcode.block`: pcode block.
-- `pcode.function`: pcode function.
-- `pcode.op.at`: pcode op at.
-- `pcode.varnode_uses`: pcode varnode uses.
+#### pcode
+- `pcode.block`: Return per-instruction p-code for the basic block containing an address.
+- `pcode.function`: Return per-instruction p-code for a function.
+- `pcode.op.at`: Return the p-code ops generated by the instruction at an address.
+- `pcode.varnode_uses`: Find p-code reads and writes that match a selected varnode.
 
-## search
-- `search.bytes`: Search for a byte pattern in program memory.
-- `search.constants`: Search for scalar constants in instructions and data.
-- `search.defined_strings`: List defined strings in the program.
-- `search.instructions`: Search for instructions matching a pattern.
-- `search.pcode`: Search for p-code operations matching criteria.
-- `search.resolve`: Resolve a symbol name or expression to an address.
-- `search.text`: Search for a text string in the program.
+#### search
+- `search.bytes`: Search program memory for an exact byte pattern.
+- `search.constants`: Search instructions for scalar constant operands that match a value.
+- `search.defined_strings`: List defined strings discovered in the program.
+- `search.instructions`: Search instructions by mnemonic or rendered instruction text.
+- `search.pcode`: Search p-code operations by mnemonic or rendered op text.
+- `search.resolve`: Resolve a symbol name or expression into an address.
+- `search.text`: Search for text across defined strings and raw memory matches.
 
 ## Contact
 
