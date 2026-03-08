@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ghidra-headless-mcp"
+dynamic = ["version"]
+description = "Ghidra headless MCP server for AI agents."
+readme = "README.md"
+requires-python = ">=3.11"
+keywords = ["ghidra", "pyghidra", "mcp", "reverse-engineering", "ai-agent"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Intended Audience :: Developers",
+  "Topic :: Security",
+  "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+  "pyghidra>=3.0.2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=9,<10",
+  "ruff>=0.15,<0.16",
+]
+
+[project.scripts]
+ghidra_headless_mcp = "ghidra_headless_mcp.cli:main"
+ghidra-headless-mcp = "ghidra_headless_mcp.cli:main"
+
+[tool.setuptools]
+packages = ["ghidra_headless_mcp"]
+
+[tool.setuptools.dynamic]
+version = { attr = "ghidra_headless_mcp._version.__version__" }
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-q"
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+  "live: requires a real Ghidra install and pyghidra.",
+  "slow: significantly slower integration coverage.",
+  "socket: uses localhost sockets and may be skipped in restricted sandboxes.",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["ghidra_headless_mcp", "tests", "ghidra_headless_mcp.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RET", "ARG", "PL", "RUF"]
+ignore = [
+  "E501",
+  "PLR0913",
+  "PLR0911",
+  "PLR0912",
+  "PLR2004",
+  "PLW0108",
+  "PLC0415",
+  "SIM105",
+  "SIM108",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"ghidra_headless_mcp/fake_ghidra.py" = ["PLR0915"]
+"ghidra_headless_mcp/fuzzer.py" = ["PLR0915"]
+"tests/test_all_tools_semantics.py" = ["PLR0915"]
+"tests/test_fake_backend_categories.py" = ["PLR0915"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
