@@ -279,6 +279,8 @@ class GhidraBackend:
             folder_path = folder_path or "/"
             program_name = tail
         if not program_name:
+            if not shared_project:
+                project.close()
             raise GhidraBackendError("program_name or program_path is required")
 
         try:
