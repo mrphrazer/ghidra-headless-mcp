@@ -89,6 +89,7 @@ class GhidraBackend:
         self._tasks: dict[str, TaskRecord] = {}
         self._lock = threading.Lock()
         self._startup_lock = threading.Lock()
+        self._project_open_lock = threading.Lock()
         self._executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="ghidra_headless_mcp")
         self._started = False
         self._launcher: Any = None
@@ -1102,7 +1103,7 @@ class GhidraBackend:
         if length > MAX_MEMORY_READ_BYTES:
             raise GhidraBackendError(f"length must be <= {MAX_MEMORY_READ_BYTES}")
         addr = self._coerce_address(session_id, address, "address")
-        raw = bytes(self._get_record(session_id).flat_api.getBytes(addr, length))
+        raw = self._read_bytes_per_block(self._get_program(session_id), addr, length)
         return {
             "session_id": session_id,
             "address": self._addr_str(addr),
@@ -1110,6 +1111,40 @@ class GhidraBackend:
             "data_base64": base64.b64encode(raw).decode("ascii"),
             "data_hex": raw.hex(),
         }
+
+    def _read_bytes_per_block(self, program: Any, addr: Any, length: int) -> bytes:
+        """Read memory one block at a time instead of via MemoryMapDB.getBytes.
+
+        ``FlatProgramAPI.getBytes``/``MemoryMapDB.getBytes`` route through the
+        program's read buffer and can return zeroes for blocks whose backing
+        store was populated out of band (for example an import whose
+        SubMemoryBlock was created empty while the FileBytes stayed correct).
+        ``MemoryBlock.getByte`` goes straight to the block's own implementation,
+        so walk the address range block by block and read each one directly.
+        """
+        memory = program.getMemory()
+        address_factory = program.getAddressFactory()
+        out = bytearray()
+        cursor = addr
+        end_offset = addr.getOffset() + length
+        while cursor.getOffset() < end_offset:
+            block = memory.getBlock(cursor)
+            if block is None:
+                raise GhidraBackendError(
+                    f"no memory block at {self._addr_str(cursor)}; "
+                    f"cannot read {length} bytes from {self._addr_str(addr)}"
+                )
+            block_end = block.getEnd().getOffset()
+            chunk_end = min(end_offset - 1, block_end)
+            chunk_len = int(chunk_end) - int(cursor.getOffset()) + 1
+            if chunk_len <= 0:
+                raise GhidraBackendError(
+                    f"invalid block bounds while reading {self._addr_str(addr)}"
+                )
+            for offset in range(chunk_len):
+                out.append(block.getByte(cursor.add(offset)) & 0xFF)
+            cursor = address_factory.getDefaultAddressSpace().getAddress(chunk_end + 1)
+        return bytes(out)
 
     def memory_write(
         self,
@@ -1127,12 +1162,27 @@ class GhidraBackend:
         addr = self._coerce_address(session_id, address, "address")
 
         def mutate() -> int:
-            from jpype.types import JArray, JByte
-
-            written = (
-                self._get_program(session_id).getMemory().setBytes(addr, JArray(JByte)(payload))
-            )
-            return len(payload) if written is None else int(written)
+            # Mirror _read_bytes_per_block: MemoryMapDB.setBytes silently drops
+            # writes when the block's backing store is in the inconsistent state
+            # this backend has to cope with, so write through each block instead.
+            program = self._get_program(session_id)
+            memory = program.getMemory()
+            payload_view = memoryview(payload)
+            written = 0
+            offset = 0
+            while offset < len(payload):
+                cursor = addr.add(offset)
+                block = memory.getBlock(cursor)
+                if block is None:
+                    raise GhidraBackendError(
+                        f"no memory block at {self._addr_str(cursor)}"
+                    )
+                room_in_block = int(block.getEnd().getOffset()) - int(cursor.getOffset()) + 1
+                take = min(room_in_block, len(payload) - offset)
+                block.putBytes(cursor, payload_view[offset : offset + take])
+                offset += take
+                written += take
+            return written
 
         written = self._with_write(session_id, f"Write memory {self._addr_str(addr)}", mutate)
         return {
@@ -5538,8 +5588,17 @@ class GhidraBackend:
                 project_name or self._default_project_name(seed_name),
                 False,
             )
-        temp_root = tempfile.mkdtemp(prefix="ghidra_headless_mcp-")
-        return temp_root, self._default_project_name(seed_name), True
+        effective_name = self._default_project_name(seed_name)
+        # Derive the scratch location from the project name instead of calling
+        # mkdtemp() on every open. With a fresh directory per session,
+        # _find_open_project never matches (the resolved locations always
+        # differ), so two sessions on the same program each called
+        # GhidraProject.openProject() and Ghidra handed back a second ProgramDB
+        # for one .gpr - the state that makes block reads come back as zeroes.
+        # A stable, name-keyed directory keeps one open Project per
+        # (location, name) for the life of the process.
+        temp_root = str(Path(tempfile.gettempdir()) / "ghidra_headless_mcp" / effective_name)
+        return temp_root, effective_name, True
 
     def _default_project_name(self, seed_name: str) -> str:
         stem = Path(seed_name).name or "program"
@@ -5571,30 +5630,39 @@ class GhidraBackend:
         from ghidra.base.project import GhidraProject
         from ghidra.framework.model import ProjectLocator
 
-        existing = self._find_open_project(project_location, project_name)
-        if existing is not None:
-            return existing
+        # Serialise the check-then-open sequence: two sessions opening the same
+        # (location, name) concurrently would otherwise both miss the in-memory
+        # cache and call GhidraProject.openProject() twice. A second open of one
+        # .gpr hands back a ProgramDB whose block store can read back as zeroes,
+        # which is exactly the corruption this guard is here to prevent.
+        with self._project_open_lock:
+            existing = self._find_open_project(project_location, project_name)
+            if existing is not None:
+                return existing
 
-        locator = ProjectLocator(project_location, project_name)
-        try:
-            if locator.exists():
-                return GhidraProject.openProject(project_location, project_name)
-            Path(project_location).mkdir(parents=True, exist_ok=True)
-            return GhidraProject.createProject(project_location, project_name, False)
-        except Exception as exc:
-            raise GhidraBackendError(f"failed to open project: {exc}") from exc
+            locator = ProjectLocator(project_location, project_name)
+            try:
+                if locator.exists():
+                    return GhidraProject.openProject(project_location, project_name)
+                Path(project_location).mkdir(parents=True, exist_ok=True)
+                return GhidraProject.createProject(project_location, project_name, False)
+            except Exception as exc:
+                raise GhidraBackendError(f"failed to open project: {exc}") from exc
 
     def _open_existing_project(self, project_location: str, project_name: str) -> Any:
         from ghidra.base.project import GhidraProject
 
-        existing = self._find_open_project(project_location, project_name)
-        if existing is not None:
-            return existing
+        # Same guard as _open_or_create_project: never re-open a .gpr that this
+        # process already holds, always hand back the existing Project object.
+        with self._project_open_lock:
+            existing = self._find_open_project(project_location, project_name)
+            if existing is not None:
+                return existing
 
-        try:
-            return GhidraProject.openProject(project_location, project_name)
-        except Exception as exc:
-            raise GhidraBackendError(f"failed to open project: {exc}") from exc
+            try:
+                return GhidraProject.openProject(project_location, project_name)
+            except Exception as exc:
+                raise GhidraBackendError(f"failed to open project: {exc}") from exc
 
     def _resolve_loader_class(self, loader_name: str | None) -> Any:
         if not loader_name:
